@@ -1,0 +1,42 @@
+{
+  "id": "bigquery",
+  "name": "BigQuery",
+  "name_en": "BigQuery",
+  "version": "1.0.0",
+  "description": "Consulta de datos en Google BigQuery: ejecutar consultas SQL, listar datasets y tablas, y estimar el costo de una consulta antes de ejecutarla.",
+  "description_en": "Query data in Google BigQuery: run SQL queries, list datasets and tables, and estimate a query's cost before running it.",
+  "category": "cloud",
+  "category_en": "cloud",
+  "keywords": ["bigquery", "google cloud", "gcp", "sql", "datasets", "consultas", "queries", "data warehouse", "analitica", "analytics"],
+  "icon": "icon.svg",
+  "library": {
+    "package": "ruvic-bigquery-connector",
+    "install": "pip install git+https://github.com/tu-org/conector-bigquery.git#subdirectory=lib",
+    "import_name": "ruvic_bigquery_connector"
+  },
+  "auth_modes": [
+    {
+      "id": "service_account",
+      "label": "Cuenta de servicio (Service Account JSON)",
+      "fields": [
+        { "key": "project_id", "label": "ID del proyecto de Google Cloud", "type": "text", "required": true, "placeholder": "mi-proyecto-123456" },
+        { "key": "service_account_json", "label": "Clave JSON de la cuenta de servicio", "type": "password", "secret": true, "required": true, "help_text": "Pega el contenido completo del archivo .json que descargaste al crear la clave de la cuenta de servicio en Google Cloud Console." },
+        { "key": "location", "label": "Ubicación de los datos (opcional)", "type": "text", "required": false, "default": "US", "help_text": "Debe coincidir con la ubicación configurada en tus datasets de BigQuery (ej. 'US', 'EU', 'us-central1')." },
+        { "key": "max_bytes_billed", "label": "Tope de bytes facturables por consulta (opcional)", "type": "number", "required": false, "default": "10737418240", "help_text": "Protección contra consultas que escaneen accidentalmente demasiados datos. Default: 10 GiB. Si una consulta necesita escanear más, BigQuery la rechaza antes de cobrar por ella — ajústalo si hace falta." },
+        { "key": "allow_write_queries", "label": "Permitir consultas de escritura (INSERT/UPDATE/DELETE/etc.)", "type": "boolean", "required": false, "default": "false", "help_text": "Déjalo desactivado salvo que necesites que el agente modifique datos, no solo consultarlos." },
+        { "key": "request_timeout", "label": "Timeout de consultas (segundos)", "type": "number", "required": false, "default": "60" }
+      ]
+    }
+  ],
+  "env_prefix": "RUVIC_BIGQUERY_",
+  "operations": [
+    "cloud.execute_query",
+    "cloud.list_datasets_and_tables",
+    "cloud.estimate_query_cost"
+  ],
+  "test_connection": true,
+  "docs": {
+    "skill": "SKILL.md",
+    "permissions_note": "La cuenta de servicio necesita, como mínimo, los roles 'BigQuery Data Viewer' (leer datos) y 'BigQuery Job User' (ejecutar consultas) sobre el proyecto o los datasets específicos que el agente vaya a usar. No otorgues 'BigQuery Admin' ni roles a nivel de organización/proyecto más amplios de lo necesario. Por defecto, este conector bloquea consultas de escritura (INSERT/UPDATE/DELETE/DROP/etc.) — si necesitas permitirlas, actívalo explícitamente y asegúrate de que la cuenta de servicio tenga el rol 'BigQuery Data Editor' además de los anteriores."
+  }
+}

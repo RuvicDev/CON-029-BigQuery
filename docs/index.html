@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conector BigQuery — Ruvic</title>
+  <link rel="stylesheet" href="assets/ruvic.css">
+</head>
+<body>
+  <main class="ruvic-container">
+    <nav class="ruvic-toc" aria-label="Índice">
+      <h2 data-i18n="toc_titulo">Contenido</h2>
+      <ol>
+        <li><a href="#que-es" data-i18n="toc_que_es">¿Qué es y para qué sirve?</a></li>
+        <li><a href="#prerrequisitos" data-i18n="toc_prerrequisitos">Prerrequisitos</a></li>
+        <li><a href="#configuracion-fabricante" data-i18n="toc_fabricante">Configuración en el fabricante</a></li>
+        <li><a href="#permisos" data-i18n="toc_permisos">Permisos requeridos</a></li>
+        <li><a href="#configuracion-ruvic" data-i18n="toc_ruvic">Configuración en Ruvic</a></li>
+        <li><a href="#verificacion" data-i18n="toc_verificacion">Verificación</a></li>
+        <li><a href="#solucion-problemas" data-i18n="toc_problemas">Solución de problemas</a></li>
+        <li><a href="#faq-seguridad" data-i18n="toc_faq">Preguntas frecuentes y notas de seguridad</a></li>
+      </ol>
+    </nav>
+
+    <h1 data-i18n="titulo">Conector BigQuery</h1>
+    <p class="guide-updated">{{ULTIMA_ACTUALIZACION}}</p>
+
+    <section>
+      <h2 id="que-es" data-i18n="que_es_h2">¿Qué es y para qué sirve?</h2>
+      <p data-i18n="que_es_p1">El conector BigQuery permite que el agente de Ruvic consulte datos almacenados en Google BigQuery — ejecutar consultas SQL, explorar qué datasets y tablas existen, y estimar el costo de una consulta antes de correrla.</p>
+      <p data-i18n="que_es_p2">Una vez configurado, puedes pedirle al agente cosas como:</p>
+      <ul>
+        <li data-i18n="que_es_li1">"¿Cuáles fueron las ventas totales del mes pasado?"</li>
+        <li data-i18n="que_es_li2">"¿Qué tablas hay en el dataset de marketing?"</li>
+        <li data-i18n="que_es_li3">"¿Cuánto costaría esta consulta antes de correrla?"</li>
+      </ul>
+      <p data-i18n="que_es_p3">Operaciones soportadas:</p>
+      <table>
+        <thead><tr><th data-i18n="tabla_op_col1">Operación</th><th data-i18n="tabla_op_col2">Qué hace</th></tr></thead>
+        <tbody>
+          <tr><td><code>cloud.execute_query</code></td><td data-i18n="tabla_op_fila1">Ejecuta una consulta SQL y retorna los resultados</td></tr>
+          <tr><td><code>cloud.list_datasets_and_tables</code></td><td data-i18n="tabla_op_fila2">Lista los datasets del proyecto, o las tablas de un dataset</td></tr>
+          <tr><td><code>cloud.estimate_query_cost</code></td><td data-i18n="tabla_op_fila3">Estima cuántos datos escanearía una consulta y su costo aproximado, sin ejecutarla</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-info">
+        <span class="callout-title" data-i18n="callout_seguridad_titulo">Protecciones de seguridad incorporadas</span>
+        <span data-i18n="callout_seguridad_texto">Por defecto, este conector bloquea consultas de escritura (INSERT/UPDATE/DELETE/DROP/etc.) — solo consulta datos, no los modifica. También aplica un tope de bytes facturables por consulta, para evitar sorpresas de costo por una consulta mal escrita.</span>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="prerrequisitos" data-i18n="prereq_h2">Prerrequisitos</h2>
+      <ul>
+        <li data-i18n="prereq_li1">Un proyecto de <strong>Google Cloud</strong> con la API de BigQuery habilitada.</li>
+        <li data-i18n="prereq_li2">Acceso a <strong>Google Cloud Console</strong> (IAM & Admin) para crear una cuenta de servicio.</li>
+        <li data-i18n="prereq_li3">Saber qué <strong>datasets/tablas</strong> necesita consultar el agente, para acotar los permisos al mínimo necesario.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="configuracion-fabricante" data-i18n="fabricante_h2">Configuración en el fabricante</h2>
+      <ol class="ruvic-steps">
+        <li>
+          <strong data-i18n="fabricante_paso1_titulo">Ve a Google Cloud Console.</strong>
+          <p data-i18n="fabricante_paso1_texto">Abre <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> y selecciona el proyecto donde vive tu BigQuery.</p>
+        </li>
+        <li>
+          <strong data-i18n="fabricante_paso2_titulo">Crea una cuenta de servicio dedicada.</strong>
+          <p data-i18n="fabricante_paso2_texto">Ve a "IAM & Admin" → "Service Accounts" → "Create Service Account". Ponle un nombre descriptivo, ej. "ruvic-bigquery-connector".</p>
+        </li>
+        <li>
+          <strong data-i18n="fabricante_paso3_titulo">Otorga los roles mínimos necesarios.</strong>
+          <p data-i18n="fabricante_paso3_texto">En el paso de permisos, agrega los roles "BigQuery Data Viewer" y "BigQuery Job User". Solo agrega "BigQuery Data Editor" si vas a permitir consultas de escritura.</p>
+        </li>
+        <li>
+          <strong data-i18n="fabricante_paso4_titulo">Genera y descarga la clave JSON.</strong>
+          <p data-i18n="fabricante_paso4_texto">En la cuenta de servicio recién creada, ve a la pestaña "Keys" → "Add Key" → "Create new key" → tipo JSON. Se descarga automáticamente un archivo — este es el que vas a pegar en el formulario de Ruvic.</p>
+        </li>
+      </ol>
+      <div class="callout callout-warning">
+        <span class="callout-title" data-i18n="fabricante_callout_titulo">Riesgo de seguridad</span>
+        <span data-i18n="fabricante_callout_texto">El archivo JSON de la cuenta de servicio otorga acceso con los permisos que le diste — trátalo como una contraseña. No lo compartas por canales inseguros ni lo subas a repositorios de código.</span>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="permisos" data-i18n="permisos_h2">Permisos requeridos</h2>
+      <table>
+        <thead><tr><th data-i18n="permisos_tabla_col1">Rol de IAM</th><th data-i18n="permisos_tabla_col2">Para qué lo usa el conector</th></tr></thead>
+        <tbody>
+          <tr><td>BigQuery Data Viewer</td><td data-i18n="permisos_viewer_uso">Necesario para <code>execute_query</code>, <code>list_datasets_and_tables</code>, <code>estimate_query_cost</code></td></tr>
+          <tr><td>BigQuery Job User</td><td data-i18n="permisos_jobuser_uso">Necesario para ejecutar cualquier consulta (correr el job en BigQuery)</td></tr>
+          <tr><td>BigQuery Data Editor</td><td data-i18n="permisos_editor_uso">Solo necesario si activas "Permitir consultas de escritura"</td></tr>
+        </tbody>
+      </table>
+      <p data-i18n="permisos_nota">No otorgues el rol "BigQuery Admin" ni roles a nivel de organización — acótalo al proyecto o los datasets específicos.</p>
+    </section>
+
+    <section>
+      <h2 id="configuracion-ruvic" data-i18n="ruvic_h2">Configuración en Ruvic</h2>
+      <p data-i18n="ruvic_p1">Entra a <strong>Settings → Conectores</strong>, busca la tarjeta <strong>BigQuery</strong> y pulsa <strong>Configurar</strong>.</p>
+      <p data-i18n="ruvic_p2">Completa el <strong>ID del proyecto</strong> y pega el contenido completo de la <strong>clave JSON</strong> de la cuenta de servicio. Deja los campos avanzados (ubicación, tope de bytes facturables) en sus valores por defecto salvo que sepas que los necesitas ajustar.</p>
+      <p data-i18n="ruvic_p3">Guarda y pulsa <span class="ruvic-button" data-i18n="boton_probar_conexion">Probar conexión</span>.</p>
+    </section>
+
+    <section>
+      <h2 id="verificacion" data-i18n="verificacion_h2">Verificación</h2>
+      <ol class="ruvic-steps">
+        <li>
+          <strong data-i18n="verificacion_paso1_titulo">Test de conexión exitoso.</strong>
+          <p data-i18n="verificacion_paso1_texto">El botón <em>Probar conexión</em> debe responder: <em>"Conexión exitosa al proyecto [tu proyecto]"</em>.</p>
+        </li>
+        <li>
+          <strong data-i18n="verificacion_paso2_titulo">Prueba mínima con el agente.</strong>
+          <p data-i18n="verificacion_paso2_texto">Pide algo de solo lectura primero:</p>
+          <blockquote data-i18n="verificacion_paso2_cita">"¿Qué datasets hay en el proyecto?"</blockquote>
+        </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 id="solucion-problemas" data-i18n="problemas_h2">Solución de problemas</h2>
+      <table>
+        <thead><tr><th data-i18n="problemas_tabla_col1">Mensaje / síntoma</th><th data-i18n="problemas_tabla_col2">Causa probable y solución</th></tr></thead>
+        <tbody>
+          <tr><td data-i18n="problemas_fila1_sintoma">"No se pudo interpretar la cuenta de servicio..."</td><td data-i18n="problemas_fila1_causa">El JSON pegado está incompleto o mal copiado — vuelve a copiar el archivo completo, incluyendo las llaves de apertura y cierre.</td></tr>
+          <tr><td data-i18n="problemas_fila2_sintoma">"Permisos insuficientes..."</td><td data-i18n="problemas_fila2_causa">A la cuenta de servicio le falta el rol "BigQuery Data Viewer" o "BigQuery Job User" sobre el proyecto/dataset.</td></tr>
+          <tr><td data-i18n="problemas_fila3_sintoma">"La consulta... supera el tope de bytes facturables"</td><td data-i18n="problemas_fila3_causa">La consulta escanearía más datos que el límite configurado — agrega filtros para reducir el volumen, o aumenta "Tope de bytes facturables" si el costo es esperado.</td></tr>
+          <tr><td data-i18n="problemas_fila4_sintoma">"Consulta bloqueada: contiene la palabra clave de escritura..."</td><td data-i18n="problemas_fila4_causa">Intentaste una consulta INSERT/UPDATE/DELETE/etc. con el modo de solo lectura activo (el default) — actívalo explícitamente si necesitas permitir escrituras.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2 id="faq-seguridad" data-i18n="faq_h2">Preguntas frecuentes y notas de seguridad</h2>
+      <h3 data-i18n="faq_p1_titulo">¿El agente puede modificar o borrar mis datos?</h3>
+      <p data-i18n="faq_p1_texto">No, por defecto. El conector bloquea automáticamente cualquier consulta de escritura salvo que se active explícitamente esa opción.</p>
+
+      <h3 data-i18n="faq_p2_titulo">¿La estimación de costo es exacta?</h3>
+      <p data-i18n="faq_p2_texto">Es una aproximación basada en el precio de referencia estándar de BigQuery. Si tu proyecto usa un modelo de precio distinto (por capacidad, con descuentos), el costo real puede diferir.</p>
+
+      <h3 data-i18n="faq_p3_titulo">¿Dónde queda guardada la clave de la cuenta de servicio?</h3>
+      <p data-i18n="faq_p3_texto">Como secreto en el almacén de credenciales de la plataforma. La interfaz nunca vuelve a mostrarla.</p>
+
+      <h3 data-i18n="faq_p4_titulo">¿Qué hago si la clave se compromete?</h3>
+      <p data-i18n="faq_p4_texto">Ve a Google Cloud Console → IAM & Admin → Service Accounts, revoca/elimina la clave comprometida, genera una nueva, y actualízala en el formulario del conector.</p>
+
+      <div class="callout callout-warning">
+        <span class="callout-title" data-i18n="buenas_practicas_titulo">Buenas prácticas</span>
+        <span data-i18n="buenas_practicas_texto">Usa una cuenta de servicio dedicada y acotada al mínimo necesario; no otorgues "BigQuery Admin"; deja el bloqueo de escrituras activado salvo necesidad real; y ajusta el tope de bytes facturables según el tamaño esperado de las consultas.</span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    window.I18N = window.I18N || {};
+    window.I18N['bigquery'] = {
+      es: {
+        "toc_titulo": "Contenido",
+        "toc_que_es": "¿Qué es y para qué sirve?",
+        "toc_prerrequisitos": "Prerrequisitos",
+        "toc_fabricante": "Configuración en el fabricante",
+        "toc_permisos": "Permisos requeridos",
+        "toc_ruvic": "Configuración en Ruvic",
+        "toc_verificacion": "Verificación",
+        "toc_problemas": "Solución de problemas",
+        "toc_faq": "Preguntas frecuentes y notas de seguridad",
+        "titulo": "Conector BigQuery",
+        "que_es_h2": "¿Qué es y para qué sirve?",
+        "que_es_p1": "El conector BigQuery permite que el agente de Ruvic consulte datos almacenados en Google BigQuery — ejecutar consultas SQL, explorar qué datasets y tablas existen, y estimar el costo de una consulta antes de correrla.",
+        "que_es_p2": "Una vez configurado, puedes pedirle al agente cosas como:",
+        "que_es_li1": "\"¿Cuáles fueron las ventas totales del mes pasado?\"",
+        "que_es_li2": "\"¿Qué tablas hay en el dataset de marketing?\"",
+        "que_es_li3": "\"¿Cuánto costaría esta consulta antes de correrla?\"",
+        "que_es_p3": "Operaciones soportadas:",
+        "tabla_op_col1": "Operación",
+        "tabla_op_col2": "Qué hace",
+        "tabla_op_fila1": "Ejecuta una consulta SQL y retorna los resultados",
+        "tabla_op_fila2": "Lista los datasets del proyecto, o las tablas de un dataset",
+        "tabla_op_fila3": "Estima cuántos datos escanearía una consulta y su costo aproximado, sin ejecutarla",
+        "callout_seguridad_titulo": "Protecciones de seguridad incorporadas",
+        "callout_seguridad_texto": "Por defecto, este conector bloquea consultas de escritura (INSERT/UPDATE/DELETE/DROP/etc.) — solo consulta datos, no los modifica. También aplica un tope de bytes facturables por consulta, para evitar sorpresas de costo por una consulta mal escrita.",
+        "prereq_h2": "Prerrequisitos",
+        "prereq_li1": "Un proyecto de <strong>Google Cloud</strong> con la API de BigQuery habilitada.",
+        "prereq_li2": "Acceso a <strong>Google Cloud Console</strong> (IAM & Admin) para crear una cuenta de servicio.",
+        "prereq_li3": "Saber qué <strong>datasets/tablas</strong> necesita consultar el agente, para acotar los permisos al mínimo necesario.",
+        "fabricante_h2": "Configuración en el fabricante",
+        "fabricante_paso1_titulo": "Ve a Google Cloud Console.",
+        "fabricante_paso1_texto": "Abre console.cloud.google.com y selecciona el proyecto donde vive tu BigQuery.",
+        "fabricante_paso2_titulo": "Crea una cuenta de servicio dedicada.",
+        "fabricante_paso2_texto": "Ve a \"IAM & Admin\" → \"Service Accounts\" → \"Create Service Account\". Ponle un nombre descriptivo, ej. \"ruvic-bigquery-connector\".",
+        "fabricante_paso3_titulo": "Otorga los roles mínimos necesarios.",
+        "fabricante_paso3_texto": "En el paso de permisos, agrega los roles \"BigQuery Data Viewer\" y \"BigQuery Job User\". Solo agrega \"BigQuery Data Editor\" si vas a permitir consultas de escritura.",
+        "fabricante_paso4_titulo": "Genera y descarga la clave JSON.",
+        "fabricante_paso4_texto": "En la cuenta de servicio recién creada, ve a la pestaña \"Keys\" → \"Add Key\" → \"Create new key\" → tipo JSON. Se descarga automáticamente un archivo — este es el que vas a pegar en el formulario de Ruvic.",
+        "fabricante_callout_titulo": "Riesgo de seguridad",
+        "fabricante_callout_texto": "El archivo JSON de la cuenta de servicio otorga acceso con los permisos que le diste — trátalo como una contraseña. No lo compartas por canales inseguros ni lo subas a repositorios de código.",
+        "permisos_h2": "Permisos requeridos",
+        "permisos_tabla_col1": "Rol de IAM",
+        "permisos_tabla_col2": "Para qué lo usa el conector",
+        "permisos_viewer_uso": "Necesario para <code>execute_query</code>, <code>list_datasets_and_tables</code>, <code>estimate_query_cost</code>",
+        "permisos_jobuser_uso": "Necesario para ejecutar cualquier consulta (correr el job en BigQuery)",
+        "permisos_editor_uso": "Solo necesario si activas \"Permitir consultas de escritura\"",
+        "permisos_nota": "No otorgues el rol \"BigQuery Admin\" ni roles a nivel de organización — acótalo al proyecto o los datasets específicos.",
+        "ruvic_h2": "Configuración en Ruvic",
+        "ruvic_p1": "Entra a <strong>Settings → Conectores</strong>, busca la tarjeta <strong>BigQuery</strong> y pulsa <strong>Configurar</strong>.",
+        "ruvic_p2": "Completa el <strong>ID del proyecto</strong> y pega el contenido completo de la <strong>clave JSON</strong> de la cuenta de servicio. Deja los campos avanzados (ubicación, tope de bytes facturables) en sus valores por defecto salvo que sepas que los necesitas ajustar.",
+        "ruvic_p3": "Guarda y pulsa",
+        "boton_probar_conexion": "Probar conexión",
+        "verificacion_h2": "Verificación",
+        "verificacion_paso1_titulo": "Test de conexión exitoso.",
+        "verificacion_paso1_texto": "El botón <em>Probar conexión</em> debe responder: <em>\"Conexión exitosa al proyecto [tu proyecto]\"</em>.",
+        "verificacion_paso2_titulo": "Prueba mínima con el agente.",
+        "verificacion_paso2_texto": "Pide algo de solo lectura primero:",
+        "verificacion_paso2_cita": "\"¿Qué datasets hay en el proyecto?\"",
+        "problemas_h2": "Solución de problemas",
+        "problemas_tabla_col1": "Mensaje / síntoma",
+        "problemas_tabla_col2": "Causa probable y solución",
+        "problemas_fila1_sintoma": "\"No se pudo interpretar la cuenta de servicio...\"",
+        "problemas_fila1_causa": "El JSON pegado está incompleto o mal copiado — vuelve a copiar el archivo completo, incluyendo las llaves de apertura y cierre.",
+        "problemas_fila2_sintoma": "\"Permisos insuficientes...\"",
+        "problemas_fila2_causa": "A la cuenta de servicio le falta el rol \"BigQuery Data Viewer\" o \"BigQuery Job User\" sobre el proyecto/dataset.",
+        "problemas_fila3_sintoma": "\"La consulta... supera el tope de bytes facturables\"",
+        "problemas_fila3_causa": "La consulta escanearía más datos que el límite configurado — agrega filtros para reducir el volumen, o aumenta \"Tope de bytes facturables\" si el costo es esperado.",
+        "problemas_fila4_sintoma": "\"Consulta bloqueada: contiene la palabra clave de escritura...\"",
+        "problemas_fila4_causa": "Intentaste una consulta INSERT/UPDATE/DELETE/etc. con el modo de solo lectura activo (el default) — actívalo explícitamente si necesitas permitir escrituras.",
+        "faq_h2": "Preguntas frecuentes y notas de seguridad",
+        "faq_p1_titulo": "¿El agente puede modificar o borrar mis datos?",
+        "faq_p1_texto": "No, por defecto. El conector bloquea automáticamente cualquier consulta de escritura salvo que se active explícitamente esa opción.",
+        "faq_p2_titulo": "¿La estimación de costo es exacta?",
+        "faq_p2_texto": "Es una aproximación basada en el precio de referencia estándar de BigQuery. Si tu proyecto usa un modelo de precio distinto (por capacidad, con descuentos), el costo real puede diferir.",
+        "faq_p3_titulo": "¿Dónde queda guardada la clave de la cuenta de servicio?",
+        "faq_p3_texto": "Como secreto en el almacén de credenciales de la plataforma. La interfaz nunca vuelve a mostrarla.",
+        "faq_p4_titulo": "¿Qué hago si la clave se compromete?",
+        "faq_p4_texto": "Ve a Google Cloud Console → IAM & Admin → Service Accounts, revoca/elimina la clave comprometida, genera una nueva, y actualízala en el formulario del conector.",
+        "buenas_practicas_titulo": "Buenas prácticas",
+        "buenas_practicas_texto": "Usa una cuenta de servicio dedicada y acotada al mínimo necesario; no otorgues \"BigQuery Admin\"; deja el bloqueo de escrituras activado salvo necesidad real; y ajusta el tope de bytes facturables según el tamaño esperado de las consultas."
+      },
+      en: {
+        "toc_titulo": "Contents",
+        "toc_que_es": "What is it and what is it for?",
+        "toc_prerrequisitos": "Prerequisites",
+        "toc_fabricante": "Vendor-side setup",
+        "toc_permisos": "Required permissions",
+        "toc_ruvic": "Setup in Ruvic",
+        "toc_verificacion": "Verification",
+        "toc_problemas": "Troubleshooting",
+        "toc_faq": "FAQ and security notes",
+        "titulo": "BigQuery Connector",
+        "que_es_h2": "What is it and what is it for?",
+        "que_es_p1": "The BigQuery connector lets the Ruvic agent query data stored in Google BigQuery — run SQL queries, explore what datasets and tables exist, and estimate a query's cost before running it.",
+        "que_es_p2": "Once configured, you can ask the agent things like:",
+        "que_es_li1": "\"What were total sales last month?\"",
+        "que_es_li2": "\"What tables are in the marketing dataset?\"",
+        "que_es_li3": "\"How much would this query cost before running it?\"",
+        "que_es_p3": "Supported operations:",
+        "tabla_op_col1": "Operation",
+        "tabla_op_col2": "What it does",
+        "tabla_op_fila1": "Runs a SQL query and returns the results",
+        "tabla_op_fila2": "Lists the project's datasets, or a dataset's tables",
+        "tabla_op_fila3": "Estimates how much data a query would scan and its approximate cost, without running it",
+        "callout_seguridad_titulo": "Built-in security protections",
+        "callout_seguridad_texto": "By default, this connector blocks write queries (INSERT/UPDATE/DELETE/DROP/etc.) — it only queries data, never modifies it. It also applies a billable-bytes cap per query, to avoid cost surprises from a poorly written query.",
+        "prereq_h2": "Prerequisites",
+        "prereq_li1": "A <strong>Google Cloud</strong> project with the BigQuery API enabled.",
+        "prereq_li2": "Access to <strong>Google Cloud Console</strong> (IAM & Admin) to create a service account.",
+        "prereq_li3": "Knowing which <strong>datasets/tables</strong> the agent needs to query, to scope permissions to the minimum needed.",
+        "fabricante_h2": "Vendor-side setup",
+        "fabricante_paso1_titulo": "Go to Google Cloud Console.",
+        "fabricante_paso1_texto": "Open console.cloud.google.com and select the project where your BigQuery lives.",
+        "fabricante_paso2_titulo": "Create a dedicated service account.",
+        "fabricante_paso2_texto": "Go to \"IAM & Admin\" → \"Service Accounts\" → \"Create Service Account\". Give it a descriptive name, e.g. \"ruvic-bigquery-connector\".",
+        "fabricante_paso3_titulo": "Grant the minimum necessary roles.",
+        "fabricante_paso3_texto": "In the permissions step, add the \"BigQuery Data Viewer\" and \"BigQuery Job User\" roles. Only add \"BigQuery Data Editor\" if you'll allow write queries.",
+        "fabricante_paso4_titulo": "Generate and download the JSON key.",
+        "fabricante_paso4_texto": "On the newly created service account, go to the \"Keys\" tab → \"Add Key\" → \"Create new key\" → JSON type. A file downloads automatically — this is what you'll paste into the Ruvic form.",
+        "fabricante_callout_titulo": "Security risk",
+        "fabricante_callout_texto": "The service account's JSON file grants access with the permissions you gave it — treat it like a password. Don't share it over insecure channels or upload it to code repositories.",
+        "permisos_h2": "Required permissions",
+        "permisos_tabla_col1": "IAM role",
+        "permisos_tabla_col2": "Why the connector needs it",
+        "permisos_viewer_uso": "Needed for <code>execute_query</code>, <code>list_datasets_and_tables</code>, <code>estimate_query_cost</code>",
+        "permisos_jobuser_uso": "Needed to run any query (running the job in BigQuery)",
+        "permisos_editor_uso": "Only needed if you enable \"Allow write queries\"",
+        "permisos_nota": "Don't grant the \"BigQuery Admin\" role or organization-level roles — scope it to the project or specific datasets.",
+        "ruvic_h2": "Setup in Ruvic",
+        "ruvic_p1": "Go to <strong>Settings → Connectors</strong>, find the <strong>BigQuery</strong> card and click <strong>Configure</strong>.",
+        "ruvic_p2": "Fill in the <strong>project ID</strong> and paste the full content of the service account's <strong>JSON key</strong>. Leave the advanced fields (location, billable-bytes cap) at their defaults unless you know you need to adjust them.",
+        "ruvic_p3": "Save and click",
+        "boton_probar_conexion": "Test connection",
+        "verificacion_h2": "Verification",
+        "verificacion_paso1_titulo": "Successful connection test.",
+        "verificacion_paso1_texto": "The <em>Test connection</em> button should return: <em>\"Successful connection to project [your project]\"</em>.",
+        "verificacion_paso2_titulo": "Minimal test with the agent.",
+        "verificacion_paso2_texto": "Ask something read-only first:",
+        "verificacion_paso2_cita": "\"What datasets are in the project?\"",
+        "problemas_h2": "Troubleshooting",
+        "problemas_tabla_col1": "Message / symptom",
+        "problemas_tabla_col2": "Likely cause and fix",
+        "problemas_fila1_sintoma": "\"Could not parse the service account...\"",
+        "problemas_fila1_causa": "The pasted JSON is incomplete or was copied incorrectly — re-copy the full file, including the opening and closing braces.",
+        "problemas_fila2_sintoma": "\"Insufficient permissions...\"",
+        "problemas_fila2_causa": "The service account is missing the \"BigQuery Data Viewer\" or \"BigQuery Job User\" role on the project/dataset.",
+        "problemas_fila3_sintoma": "\"The query... exceeds the billable bytes cap\"",
+        "problemas_fila3_causa": "The query would scan more data than the configured limit — add filters to reduce volume, or increase \"Billable bytes cap\" if the cost is expected.",
+        "problemas_fila4_sintoma": "\"Query blocked: contains write keyword...\"",
+        "problemas_fila4_causa": "You attempted an INSERT/UPDATE/DELETE/etc. query with read-only mode active (the default) — enable it explicitly if you need to allow writes.",
+        "faq_h2": "FAQ and security notes",
+        "faq_p1_titulo": "Can the agent modify or delete my data?",
+        "faq_p1_texto": "Not by default. The connector automatically blocks any write query unless that option is explicitly enabled.",
+        "faq_p2_titulo": "Is the cost estimate exact?",
+        "faq_p2_texto": "It's an approximation based on BigQuery's standard reference pricing. If your project uses a different pricing model (capacity-based, with discounts), the actual cost may differ.",
+        "faq_p3_titulo": "Where is the service account key stored?",
+        "faq_p3_texto": "As a secret in the platform's credential store. The UI never displays it again.",
+        "faq_p4_titulo": "What do I do if the key is compromised?",
+        "faq_p4_texto": "Go to Google Cloud Console → IAM & Admin → Service Accounts, revoke/delete the compromised key, generate a new one, and update it in the connector form.",
+        "buenas_practicas_titulo": "Best practices",
+        "buenas_practicas_texto": "Use a dedicated, minimally-scoped service account; don't grant \"BigQuery Admin\"; leave write-blocking enabled unless there's a real need; and adjust the billable-bytes cap based on your queries' expected size."
+      }
+    };
+  </script>
+</body>
+</html>

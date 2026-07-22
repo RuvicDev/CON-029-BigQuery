@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ruvic-bigquery-connector"
+version = "1.0.0"
+description = "Conector Ruvic para Google BigQuery: ejecutar consultas SQL, listar datasets/tablas, y estimar el costo de una consulta antes de ejecutarla"
+requires-python = ">=3.10"
+dependencies = [
+    "google-cloud-bigquery>=3.25,<4.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["ruvic_bigquery_connector*"]
